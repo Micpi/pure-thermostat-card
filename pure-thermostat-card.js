@@ -524,14 +524,14 @@ class PureThermostatCard extends HTMLElement {
           display: grid;
           place-items: center;
           position: relative;
-          min-height: 280px;
-          margin-top: -2px;
+          min-height: 340px;
+          margin-top: 0;
         }
 
         .glow {
           position: absolute;
-          width: 230px;
-          height: 230px;
+          width: 260px;
+          height: 260px;
           border-radius: 50%;
           background: radial-gradient(circle, color-mix(in srgb, ${style.active_color || DEFAULT_CONFIG.style.active_color} 34%, transparent) 0%, transparent 72%);
           filter: blur(8px);
@@ -540,8 +540,8 @@ class PureThermostatCard extends HTMLElement {
         }
 
         svg {
-          width: 220px;
-          height: 220px;
+          width: 260px;
+          height: 260px;
         }
 
         .track {
@@ -598,54 +598,90 @@ class PureThermostatCard extends HTMLElement {
         .buttons {
           display: flex;
           justify-content: center;
-          gap: 14px;
-          margin-top: -4px;
+          gap: 20px;
+          margin-top: 12px;
         }
 
         .ctl-btn {
-          width: 52px;
-          height: 52px;
+          width: 56px;
+          height: 56px;
           border-radius: 50%;
-          border: 1px solid color-mix(in srgb, ${style.inactive_color || DEFAULT_CONFIG.style.inactive_color} 70%, transparent);
-          background: color-mix(in srgb, ${style.background_color || DEFAULT_CONFIG.style.background_color} 75%, transparent);
+          border: 2px solid color-mix(in srgb, ${style.inactive_color || DEFAULT_CONFIG.style.inactive_color} 50%, transparent);
+          background: transparent;
           color: ${textColor};
-          font-size: 2rem;
+          font-size: 2.2rem;
           line-height: 1;
           cursor: pointer;
+          transition: all 0.2s ease;
         }
 
         .ctl-btn:hover {
           border-color: ${style.active_color || DEFAULT_CONFIG.style.active_color};
+          color: ${style.active_color || DEFAULT_CONFIG.style.active_color};
         }
 
         .modes {
-          display: grid;
-          grid-template-columns: repeat(${Math.max(2, availableModes.length || 2)}, minmax(0, 1fr));
-          gap: 6px;
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 12px;
-          padding: 4px;
+          display: flex;
+          justify-content: flex-start;
+          gap: 12px;
+          flex: 1;
+        }
+
+        .modes-bottom {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+          margin-top: 16px;
         }
 
         .mode-btn {
+          flex: 1;
           border: none;
-          min-height: 38px;
-          border-radius: 9px;
+          min-height: 48px;
+          border-radius: 12px;
           background: transparent;
           color: ${style.inactive_color || DEFAULT_CONFIG.style.inactive_color};
           cursor: pointer;
-          display: grid;
-          place-items: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          font-size: 0.75rem;
+          transition: all 0.2s ease;
         }
 
         .mode-btn.active {
           color: #fff;
           background: ${style.active_color || DEFAULT_CONFIG.style.active_color};
+          font-weight: 600;
         }
 
         .mode-btn ha-icon {
-          --mdc-icon-size: 18px;
+          --mdc-icon-size: 24px;
+        }
+
+        .power-btn {
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
+          border: none;
+          background: color-mix(in srgb, ${style.inactive_color || DEFAULT_CONFIG.style.inactive_color} 30%, transparent);
+          color: ${textColor};
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+        }
+
+        .power-btn:hover {
+          background: color-mix(in srgb, ${style.inactive_color || DEFAULT_CONFIG.style.inactive_color} 50%, transparent);
+        }
+
+        .power-btn ha-icon {
+          --mdc-icon-size: 24px;
         }
 
         .icon-btn {
@@ -766,14 +802,43 @@ class PureThermostatCard extends HTMLElement {
                   this._config.show_plus_minus
                     ? `
                     <div class="buttons">
-                      <button type="button" class="ctl-btn" data-action="temp-down" aria-label="Decrease temperature">-</button>
+                      <button type="button" class="ctl-btn" data-action="temp-down" aria-label="Decrease temperature">−</button>
                       <button type="button" class="ctl-btn" data-action="temp-up" aria-label="Increase temperature">+</button>
                     </div>
                   `
                     : ""
                 }
 
-                ${this._renderModes(availableModes, currentMode)}
+                ${
+                  this._config.show_mode_buttons
+                    ? `
+                    <div class="modes-bottom">
+                      <div class="modes" role="group" aria-label="HVAC modes">
+                        ${availableModes.length ? availableModes.slice(0, 1).map((mode) => {
+                          const selected = mode === currentMode
+                          const icon = MODE_ICONS[mode] || "mdi:help-circle"
+                          const label = MODE_LABELS[mode] || mode
+                          return `
+                            <button
+                              class="mode-btn ${selected ? "active" : ""}"
+                              data-action="mode"
+                              data-mode="${this._escape(mode)}"
+                              title="${this._escape(label)}"
+                              type="button"
+                            >
+                              <ha-icon icon="${this._escape(icon)}"></ha-icon>
+                              <span>${this._escape(label)}</span>
+                            </button>
+                          `
+                        }).join("") : ""}
+                      </div>
+                      <button type="button" class="power-btn" data-action="power" title="Toggle power">
+                        <ha-icon icon="${currentMode === 'off' ? 'mdi:power-off' : 'mdi:power'}"></ha-icon>
+                      </button>
+                    </div>
+                  `
+                    : ""
+                }
               `
             }
           </div>
@@ -897,7 +962,7 @@ class PureThermostatCardEditor extends HTMLElement {
 
   _render() {
     if (!this.shadowRoot) return
-    
+
     // Prevent destroying DOM when already rendered (keeps accordions open)
     if (this.shadowRoot.innerHTML.trim() !== "") {
       return
