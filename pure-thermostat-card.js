@@ -803,7 +803,9 @@ class PureThermostatCardEditor extends HTMLElement {
 
   setConfig(config) {
     this._config = deepMerge(DEFAULT_CONFIG, config || {})
-    this._render()
+    if (!this._rendered) {
+      this._render()
+    }
   }
 
   _emit() {
