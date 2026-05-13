@@ -1,6 +1,6 @@
 {
   "name": "pure-thermostat-card",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "private": true,
   "description": "Minimal circular Home Assistant thermostat card with visual editor",
   "scripts": {
