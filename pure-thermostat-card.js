@@ -7,6 +7,9 @@ const DEFAULT_CONFIG = {
   icon: "mdi:thermostat",
   temperature_step: 0.5,
   precision: 1,
+  selector_size: 12,
+  show_title: true,
+  show_background: true,
   show_current_temp: true,
   show_plus_minus: true,
   show_mode_buttons: true,
@@ -129,6 +132,7 @@ class PureThermostatCard extends HTMLElement {
     const merged = deepMerge(DEFAULT_CONFIG, config)
     merged.temperature_step = Number(merged.temperature_step) || 0.5
     merged.precision = Number.isFinite(Number(merged.precision)) ? Number(merged.precision) : 1
+    merged.selector_size = clamp(Number(merged.selector_size) || 12, 8, 22)
     merged.mode_whitelist = Array.isArray(merged.mode_whitelist) ? merged.mode_whitelist : []
 
     this._config = merged
@@ -411,6 +415,9 @@ class PureThermostatCard extends HTMLElement {
     const currentMode = String(climate?.state || "off").toLowerCase()
     const actionLabel = this._getActionLabel(climate)
     const availableModes = this._getAvailableModes(climate)
+    const showBackground = this._config.show_background !== false
+    const showTitle = this._config.show_title !== false
+    const selectorSize = clamp(Number(this._config.selector_size) || 12, 8, 22)
 
     const clampedTarget = Number.isFinite(targetTemp)
       ? clamp(targetTemp, minTemp, maxTemp)
@@ -452,11 +459,20 @@ class PureThermostatCard extends HTMLElement {
           position: relative;
           overflow: hidden;
           border-radius: 18px;
-          border: ${preset.border};
-          background: ${style.background_color || DEFAULT_CONFIG.style.background_color};
+          border: ${showBackground ? preset.border : "none"};
+          background: ${
+            showBackground
+              ? style.background_color || DEFAULT_CONFIG.style.background_color
+              : "transparent"
+          };
           color: ${textColor};
-          padding: 14px 14px 10px;
+          padding: ${showBackground ? "14px 14px 10px" : "0"};
           isolation: isolate;
+        }
+
+        ha-card.no-background {
+          box-shadow: none;
+          backdrop-filter: none;
         }
 
         .overlay {
@@ -465,6 +481,7 @@ class PureThermostatCard extends HTMLElement {
           background: ${preset.overlay};
           pointer-events: none;
           z-index: 0;
+          display: ${showBackground ? "block" : "none"};
         }
 
         .content {
@@ -710,10 +727,12 @@ class PureThermostatCard extends HTMLElement {
       </style>
 
       <div class="${this._escape(sizeClass)} ${this._escape(shapeClass)} ${this._escape(appearanceClass)} ${this._escape(elevationClass)}">
-        <ha-card>
+        <ha-card class="${showBackground ? "" : "no-background"}">
           <div class="overlay"></div>
           <div class="content">
-            <div class="header">
+            ${
+              showTitle
+                ? `<div class="header">
               <div class="title-wrap">
                 <ha-icon icon="${this._escape(icon)}"></ha-icon>
                 <div class="title">${this._escape(title)}</div>
@@ -721,7 +740,9 @@ class PureThermostatCard extends HTMLElement {
               <button type="button" class="icon-btn" data-action="more-info" title="More info">
                 <ha-icon icon="mdi:dots-vertical"></ha-icon>
               </button>
-            </div>
+            </div>`
+                : ""
+            }
 
             ${
               showUnavailable
@@ -732,7 +753,7 @@ class PureThermostatCard extends HTMLElement {
                   <svg viewBox="0 0 200 200" aria-hidden="true">
                     <path class="track" d="${trackPath}"></path>
                     <path class="active" d="${activePath}"></path>
-                    <circle class="knob" cx="${knob.x}" cy="${knob.y}" r="8"></circle>
+                    <circle class="knob" cx="${knob.x}" cy="${knob.y}" r="${selectorSize}"></circle>
                   </svg>
                   <div class="center">
                     <div class="status">${this._escape(actionLabel)}</div>
@@ -768,11 +789,16 @@ class PureThermostatCardEditor extends HTMLElement {
     this.attachShadow({ mode: "open" })
     this._hass = null
     this._config = structuredClone(DEFAULT_CONFIG)
+    this._rendered = false
   }
 
   set hass(hass) {
     this._hass = hass
-    this._render()
+    if (!this._rendered) {
+      this._render()
+      return
+    }
+    this._applyHassToPickers()
   }
 
   setConfig(config) {
@@ -1013,6 +1039,19 @@ class PureThermostatCardEditor extends HTMLElement {
               </div>
             </div>
 
+            <label>Selector dot size</label>
+            <input class="js-input" data-path="selector_size" data-kind="number" type="number" min="8" max="22" step="1" value="${this._escape(this._get("selector_size", 12))}" />
+
+            <label class="line-checkbox">
+              <input class="js-input" data-path="show_title" data-kind="boolean" type="checkbox" ${this._get("show_title", true) ? "checked" : ""} />
+              Show title/header
+            </label>
+
+            <label class="line-checkbox">
+              <input class="js-input" data-path="show_background" data-kind="boolean" type="checkbox" ${this._get("show_background", true) ? "checked" : ""} />
+              Show background/card frame
+            </label>
+
             <label class="line-checkbox">
               <input class="js-input" data-path="show_current_temp" data-kind="boolean" type="checkbox" ${this._get("show_current_temp", true) ? "checked" : ""} />
               Show current temperature
@@ -1133,9 +1172,10 @@ class PureThermostatCardEditor extends HTMLElement {
     `
 
     this._bindEditorEvents()
+    this._rendered = true
   }
 
-  _bindEditorEvents() {
+  _applyHassToPickers() {
     const entityPickers = this.shadowRoot.querySelectorAll(".js-entity")
     entityPickers.forEach((el) => {
       el.hass = this._hass
@@ -1145,6 +1185,13 @@ class PureThermostatCardEditor extends HTMLElement {
     iconPickers.forEach((el) => {
       el.hass = this._hass
     })
+  }
+
+  _bindEditorEvents() {
+    this._applyHassToPickers()
+
+    const entityPickers = this.shadowRoot.querySelectorAll(".js-entity")
+    const iconPickers = this.shadowRoot.querySelectorAll(".js-icon")
 
     const inputs = this.shadowRoot.querySelectorAll(".js-input")
     inputs.forEach((el) => {
