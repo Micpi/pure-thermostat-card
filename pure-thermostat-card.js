@@ -259,9 +259,10 @@ class PureThermostatCard extends HTMLElement {
     const normalized = String(hexColor || "").trim()
     if (!this._isHexColor(normalized)) return null
 
-    const full = normalized.length === 4
-      ? `#${normalized[1]}${normalized[1]}${normalized[2]}${normalized[2]}${normalized[3]}${normalized[3]}`
-      : normalized
+    const full =
+      normalized.length === 4
+        ? `#${normalized[1]}${normalized[1]}${normalized[2]}${normalized[2]}${normalized[3]}${normalized[3]}`
+        : normalized
 
     const r = parseInt(full.slice(1, 3), 16)
     const g = parseInt(full.slice(3, 5), 16)
@@ -411,7 +412,9 @@ class PureThermostatCard extends HTMLElement {
     const actionLabel = this._getActionLabel(climate)
     const availableModes = this._getAvailableModes(climate)
 
-    const clampedTarget = Number.isFinite(targetTemp) ? clamp(targetTemp, minTemp, maxTemp) : minTemp
+    const clampedTarget = Number.isFinite(targetTemp)
+      ? clamp(targetTemp, minTemp, maxTemp)
+      : minTemp
     const progress = (clampedTarget - minTemp) / Math.max(1, maxTemp - minTemp)
     const percent = clamp(progress, 0, 1)
 
@@ -720,9 +723,10 @@ class PureThermostatCard extends HTMLElement {
               </button>
             </div>
 
-            ${showUnavailable
-              ? `<div class="unavailable">Entity unavailable: ${this._escape(this._config.entity)}</div>`
-              : `
+            ${
+              showUnavailable
+                ? `<div class="unavailable">Entity unavailable: ${this._escape(this._config.entity)}</div>`
+                : `
                 <div class="dial-wrap">
                   <div class="glow"></div>
                   <svg viewBox="0 0 200 200" aria-hidden="true">
@@ -737,17 +741,20 @@ class PureThermostatCard extends HTMLElement {
                   </div>
                 </div>
 
-                ${this._config.show_plus_minus
-                  ? `
+                ${
+                  this._config.show_plus_minus
+                    ? `
                     <div class="buttons">
                       <button type="button" class="ctl-btn" data-action="temp-down" aria-label="Decrease temperature">-</button>
                       <button type="button" class="ctl-btn" data-action="temp-up" aria-label="Increase temperature">+</button>
                     </div>
                   `
-                  : ""}
+                    : ""
+                }
 
                 ${this._renderModes(availableModes, currentMode)}
-              `}
+              `
+            }
           </div>
         </ha-card>
       </div>
@@ -818,7 +825,6 @@ class PureThermostatCardEditor extends HTMLElement {
     node[parts[parts.length - 1]] = value
     this._config = updated
     this._emit()
-    this._render()
   }
 
   _remove(path) {
@@ -834,7 +840,6 @@ class PureThermostatCardEditor extends HTMLElement {
     delete node[parts[parts.length - 1]]
     this._config = updated
     this._emit()
-    this._render()
   }
 
   _toHexColor(value, fallback = "#00aeef") {
