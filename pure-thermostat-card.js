@@ -897,6 +897,11 @@ class PureThermostatCardEditor extends HTMLElement {
 
   _render() {
     if (!this.shadowRoot) return
+    
+    // Prevent destroying DOM when already rendered (keeps accordions open)
+    if (this.shadowRoot.innerHTML.trim() !== "") {
+      return
+    }
 
     const modeWhitelist = Array.isArray(this._config.mode_whitelist)
       ? this._config.mode_whitelist.join(", ")
@@ -1042,7 +1047,10 @@ class PureThermostatCardEditor extends HTMLElement {
             </div>
 
             <label>Selector dot size</label>
-            <input class="js-input" data-path="selector_size" data-kind="number" type="number" min="8" max="22" step="1" value="${this._escape(this._get("selector_size", 12))}" />
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <input class="js-input" data-path="selector_size" data-kind="number" type="range" min="8" max="22" step="1" value="${this._escape(this._get("selector_size", 12))}" style="flex: 1;" />
+              <span style="min-width: 30px; text-align: center; font-weight: 600; color: #38bdf8;">${this._escape(this._get("selector_size", 12))}</span>
+            </div>
 
             <label class="line-checkbox">
               <input class="js-input" data-path="show_title" data-kind="boolean" type="checkbox" ${this._get("show_title", true) ? "checked" : ""} />
